@@ -50,22 +50,13 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-
-ADC_HandleTypeDef hadc1;
-DMA_HandleTypeDef hdma_adc1;
-
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 uint32_t ADC_BUF[2];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
-
 void SystemClock_Config(void);
-//void Error_Handler(void);
- void MX_GPIO_Init(void);
-void MX_DMA_Init(void);
-void MX_ADC1_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -73,22 +64,26 @@ void MX_ADC1_Init(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
+/*void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
 	uint32_t val[2];
 	if(hadc -> Instance == ADC1){
 		val[0] =ADC_BUF[0];
 		val[1] =ADC_BUF[1];
 		//val[2] =ADC_BUF[2];
 
-	}
 }
+}*/
 /* USER CODE END 0 */
 
 int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	uint32_t valor;
+	uint32_t ADC_VALUE2;
+	uint32_t ADC_VALUE1;
+	uint32_t Altura = 0;
+	uint32_t garra = 0;
+
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -111,16 +106,19 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_TIM1_Init();
-  MX_TIM4_Init();
   MX_ADC1_Init();
   MX_USART3_UART_Init();
+  MX_ADC2_Init();
 
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-HAL_ADC_Start_DMA(&hadc1,(uint32_t*)ADC_BUF , 2);
-HAL_ADC_Start_IT(&hadc1);
-HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-
+  //HAL_ADC_Start_DMA(&hadc1,(uint32_t*)ADC_BUF , 2);
+  //HAL_ADC_Start_IT(&hadc1);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+  HAL_ADC_Start(&hadc2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -129,20 +127,63 @@ HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
   {
   /* USER CODE END WHILE */
 
-	  HAL_ADC_Start_IT(&hadc1);
-	  HAL_Delay(50);
-	  valor = *val[0];
-	  HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, valor);
-	  HAL_Delay(3000);
-	  HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 1900);
-	  HAL_Delay(1000);
-
-
-
-
   /* USER CODE BEGIN 3 */
+	  //HAL_ADC_Start_IT(&hadc1);
+	  HAL_Delay(50);
+	  HAL_ADC_Start(&hadc2);
+	  HAL_ADC_Start(&hadc1);
+
+	  ADC_VALUE1 = HAL_ADC_GetValue(&hadc1);
+	  ADC_VALUE2 = HAL_ADC_GetValue(&hadc2);
+	  //GIRA A BASE
+
+
+	  if (ADC_VALUE1 < 1000){
+	  	  			__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3, 500);
+	  	  		} else if (ADC_VALUE1 > 3800){
+	  	  			__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3, 1900);
+	  	  	}else{
+	  	  		__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3, 1200);
+	  	  	}
+//para frente e para trás
+	  if (ADC_VALUE2 < 1000){
+	  			__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 500);
+	  		} else if (ADC_VALUE2 > 3800){
+	  			__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 1250);
+	  	}else{
+	  		__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 900);
+	  	}
+	  HAL_ADC_Stop(&hadc2);
+	  HAL_ADC_Stop(&hadc1);
+
+//para cima e para baixo
+
+	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_12)==0){
+		  Altura++;
+		  HAL_Delay(500);
+	  }
+
+	  if(Altura % 2 == 1){
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2, 1350);
+	  }else{
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2, 1900);
+	  }
 
   }
+
+  //garra
+  if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_14)==0){
+ 		  garra++;
+ 		  HAL_Delay(500);
+ 	  }
+
+ 	  if(garra % 2 == 1){
+ 		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_4, 900);
+ 	  }else{
+ 		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_4, 600);
+ 	  }
+
+
   /* USER CODE END 3 */
 
 }
