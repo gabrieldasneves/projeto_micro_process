@@ -82,7 +82,11 @@ int main(void)
 	uint32_t ADC_VALUE2;
 	uint32_t ADC_VALUE1;
 	uint32_t Altura = 0;
+	uint32_t giro = 1200;
+	uint32_t frtr = 900;
 	uint32_t garra = 0;
+	uint32_t passo = 50;
+	uint32_t passo_delay = 30;
 
   /* USER CODE END 1 */
 
@@ -112,13 +116,21 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  //HAL_ADC_Start_DMA(&hadc1,(uint32_t*)ADC_BUF , 2);
-  //HAL_ADC_Start_IT(&hadc1);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
   HAL_ADC_Start(&hadc2);
+  HAL_ADC_Start(&hadc1);
+
+  //setup posições
+  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3, giro);
+  HAL_Delay(200);
+  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, frtr);
+  HAL_Delay(200);
+  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_4, 1600);
+  HAL_Delay(200);
+  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2, 1900);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -135,55 +147,62 @@ int main(void)
 
 	  ADC_VALUE1 = HAL_ADC_GetValue(&hadc1);
 	  ADC_VALUE2 = HAL_ADC_GetValue(&hadc2);
+
+
+
 	  //GIRA A BASE
 
-
-	  if (ADC_VALUE1 < 1000){
-	  	  			__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3, 500);
-	  	  		} else if (ADC_VALUE1 > 3800){
-	  	  			__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3, 1900);
-	  	  	}else{
-	  	  		__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3, 1200);
+	  if (ADC_VALUE1 < 1000 && giro>499){
+		  	  	  	  giro = giro - passo;
+		  	  	  	  HAL_Delay(passo_delay);
+	  	  			__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3, giro);
+	  	  		} else if (ADC_VALUE1 > 3800 && giro < 1950){
+	  	  			giro = giro + passo;
+	  	  			HAL_Delay(passo_delay);
+	  	  			__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3, giro);
 	  	  	}
 //para frente e para trás
-	  if (ADC_VALUE2 < 1000){
-	  			__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 500);
-	  		} else if (ADC_VALUE2 > 3800){
-	  			__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 1250);
-	  	}else{
-	  		__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 900);
+
+	  if (ADC_VALUE2 < 1000 && frtr>499){
+		  	  	frtr= frtr -passo;
+		  	  	HAL_Delay(passo_delay);
+	  			__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, frtr);
+	  		} else if (ADC_VALUE2 > 3800 && frtr < 1300){
+	  			frtr = frtr + passo;
+	  			HAL_Delay(passo_delay);
+	  			__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, frtr);
 	  	}
 	  HAL_ADC_Stop(&hadc2);
 	  HAL_ADC_Stop(&hadc1);
 
 //para cima e para baixo
 
-	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_12)==0){
+	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_12)==1){
 		  Altura++;
-		  HAL_Delay(500);
+		  HAL_Delay(300);
 	  }
 
 	  if(Altura % 2 == 1){
-		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2, 1350);
+		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2, 1450);
 	  }else{
 		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_2, 1900);
 	  }
 
+	  //garra
+
+	  if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_14)==1){
+	   		  garra++;
+	   		  HAL_Delay(300);
+	   	  }
+
+	   	  if(garra % 2 == 1){
+	   		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_4, 1600);
+	   	  }else{
+	   		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_4, 950);
+	   	  }
+
+
   }
-
-  //garra
-  if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_14)==0){
- 		  garra++;
- 		  HAL_Delay(500);
- 	  }
-
- 	  if(garra % 2 == 1){
- 		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_4, 900);
- 	  }else{
- 		  __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_4, 600);
- 	  }
-
-
   /* USER CODE END 3 */
 
 }
